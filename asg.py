@@ -1,21 +1,29 @@
-import boto3, datetime
+import boto3
+import botocore
+import datetime
 from termcolor import colored
 
-def get_metrics_elb(asset):
-    client1 = boto3.client('elb')
-    response1 = client1.describe_instance_health(
-        LoadBalancerName=asset,
 
-    )
+def get_metrics_elb(asset):
+    try:
+        client1 = boto3.client('elb')
+    except botocore.exceptions.ClientError as e:
+        print(colored("Unexpected error: {}".format(e), 'red'))
+    try:
+        response1 = client1.describe_instance_health(
+         LoadBalancerName=asset,
+        )
+    except botocore.exceptions.ClientError as e:
+        print(colored("Unexpected error: {}".format(e), 'red'))
+        return 1
 
     for instancestates in response1['InstanceStates']:
         if instancestates['State'] == 'InService':
-            ins_state = colored(instancestates['State'],'green')
+            ins_state = colored(instancestates['State'], 'green')
         else:
-            ins_state = colored(instancestates['State'],'red')
+            ins_state = colored(instancestates['State'], 'red')
 
-        print('Instance Id: ', instancestates['InstanceId'], '| Instance State: ', ins_state)
-
+        print('Instance Id: {} | Instance State: {}'.format(instancestates['InstanceId'], ins_state))
 
 
 def get_metrics_ec2(asset):
@@ -35,7 +43,7 @@ def get_metrics_ec2(asset):
         Statistics=['Average'],
         Unit='Percent'
     )
-    newlist=response['Datapoints']
+    newlist = response['Datapoints']
     newlist = sorted(newlist, key=lambda k: k['Timestamp'])
     if len(newlist) > 0:
         return newlist[-1]['Average']
@@ -50,18 +58,18 @@ def asg():
     unhealthy = 0
     for ASG in ASGs:
         print('#'*150)
-        print(colored(ASG['AutoScalingGroupName'],'red'))
-        print('ASG Min Size: ', ASG['MinSize'])
-        print('ASG Max Size: ', ASG['MaxSize'])
-        print('ASG Desired Size: ', ASG['DesiredCapacity'])
-        print('ASG instance count: ', len(ASG['Instances']))
-        print('#'*150)
+        print('ASG Name: {}'.format(colored(ASG['AutoScalingGroupName'], 'cyan')))
+        print('ASG Min Size: {}'.format(ASG['MinSize']))
+        print('ASG Max Size: {}'.format(ASG['MaxSize']))
+        print('ASG Desired Size: {}'.format(ASG['DesiredCapacity']))
+        print('ASG instance count: {}'.format(len(ASG['Instances'])))
+        print('x'*150)
 
         for instance in ASG['Instances']:
             if instance['HealthStatus'] == 'Healthy':
                 ins_health = colored('Healthy', 'green')
                 ins_cpu = get_metrics_ec2(instance['InstanceId'])
-                if ins_cpu and ins_cpu > 5:
+                if ins_cpu and ins_cpu > 50:
                     ins_cpu = colored(ins_cpu, 'red')
                 else:
                     ins_cpu = colored(ins_cpu, 'green')
@@ -74,18 +82,24 @@ def asg():
             else:
                 ins_life = colored(instance['LifecycleState'], 'red')
 
-            print('Instance Id: ', colored(instance['InstanceId'],'yellow'), '| Instance Zone:', colored(instance['AvailabilityZone'],'yellow'), ' | Instance LifecycleState: ', ins_life, '| Instance Status: ', ins_health, '| Instance Cpu: ', ins_cpu)
+            print('Instance Id: {} | Instance Zone: {} | Instance LifecycleState: {} | Instance Status: {} | Instance Cpu: {}'.format(colored(instance['InstanceId'], 'yellow'), colored(instance['AvailabilityZone'], 'yellow'), ins_life, ins_health, ins_cpu))
 
-        print('#'*150)
-        print('ASG Healthy Instance Count: ', colored(healthy, "green"))
-        print('ASG Unhealthy Instance Count: ', colored(unhealthy, "red"))
+        if unhealthy == 0:
+            unhealthycolor = 'green'
+        else:
+            unhealthycolor = 'red'
+        print('x'*150)
+        print('ASG Healthy Instance Count: {}'.format(colored(healthy, 'green')))
+        print('ASG Unhealthy Instance Count: {}'.format(colored(unhealthy, unhealthycolor)))
+        healthy = 0
+        unhealthy = 0
 
         for ELB in (ASG['LoadBalancerNames']):
-            print('#'*150)
-            print('ELB Name: ', ELB)
-            print('#'*150)
+            print('~'*150)
+            print('ELB Name: {}'.format(colored(ELB, 'blue')))
+            print('~'*150)
             get_metrics_elb(ELB)
-            print('#'*150)
+            print('~'*150)
 
 
 if __name__ == "__main__":
