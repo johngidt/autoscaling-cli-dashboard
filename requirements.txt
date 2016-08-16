@@ -1,0 +1,3 @@
+boto3==1.3.0
+botocore==1.4.9
+termcolor==1.1.0

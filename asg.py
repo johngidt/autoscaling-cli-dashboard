@@ -61,22 +61,19 @@ def get_metrics_ec2(asset):
         return newlist[-1]['Average']
 
 
-def asg_list():
+def asg_list(ASG):
     client = boto3.client('autoscaling')
-    response = client.describe_auto_scaling_groups()
+    try:
+        response = client.describe_auto_scaling_groups(AutoScalingGroupNames=ASG.split(','))
+    except:
+        response = client.describe_auto_scaling_groups()
     ASGs = response['AutoScalingGroups']
 
     for ASG in ASGs:
-        if asg == ASG['AutoScalingGroupName']:
-            try:
-                asg_display(ASG)
-            except Exception as err:
-                print(err)
-        elif asg == '':
-            try:
-                asg_display(ASG)
-            except Exception as err:
-                print(err)
+        try:
+            asg_display(ASG)
+        except Exception as err:
+            print(err)
 
 
 def asg_display(ASG):
@@ -128,6 +125,6 @@ def asg_display(ASG):
 
 if __name__ == "__main__":
     try:
-        asg_list()
+        asg_list(asg)
     except Exception as err:
         print(err)
