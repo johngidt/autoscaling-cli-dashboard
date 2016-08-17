@@ -12,20 +12,20 @@ parser.add_argument('-g', '--asg', help='Auto Scaling Group', default='', requir
 args = parser.parse_args()
 
 asg = args.asg
-print ("asg: {}".format(asg))
+print ("asg: {0}".format(asg))
 
 
 def get_metrics_elb(asset):
     try:
         client1 = boto3.client('elb')
     except botocore.exceptions.ClientError as e:
-        print(colored("Unexpected error: {}".format(e), 'red'))
+        print(colored("Unexpected error: {0}".format(e), 'red'))
     try:
         response1 = client1.describe_instance_health(
          LoadBalancerName=asset,
         )
     except botocore.exceptions.ClientError as e:
-        print(colored("Unexpected error: {}".format(e), 'red'))
+        print(colored("Unexpected error: {0}".format(e), 'red'))
         return 1
 
     for instancestates in response1['InstanceStates']:
@@ -34,7 +34,7 @@ def get_metrics_elb(asset):
         else:
             ins_state = colored(instancestates['State'], 'red')
 
-        print('Instance Id: {} | Instance State: {}'
+        print('Instance Id: {0} | Instance State: {1}'
               .format(instancestates['InstanceId'], ins_state))
 
 
@@ -80,11 +80,11 @@ def asg_display(ASG):
     healthy = 0
     unhealthy = 0
     print('#'*150)
-    print('ASG Name: {}'.format(colored(ASG['AutoScalingGroupName'], 'cyan')))
-    print('ASG Min Size: {}'.format(ASG['MinSize']))
-    print('ASG Max Size: {}'.format(ASG['MaxSize']))
-    print('ASG Desired Size: {}'.format(ASG['DesiredCapacity']))
-    print('ASG instance count: {}'.format(len(ASG['Instances'])))
+    print('ASG Name: {0}'.format(colored(ASG['AutoScalingGroupName'], 'cyan')))
+    print('ASG Min Size: {0}'.format(ASG['MinSize']))
+    print('ASG Max Size: {0}'.format(ASG['MaxSize']))
+    print('ASG Desired Size: {0}'.format(ASG['DesiredCapacity']))
+    print('ASG instance count: {0}'.format(len(ASG['Instances'])))
     print('x'*150)
 
     for instance in ASG['Instances']:
@@ -104,7 +104,7 @@ def asg_display(ASG):
         else:
             ins_life = colored(instance['LifecycleState'], 'red')
 
-        print('Instance Id: {} | Instance Zone: {} | Instance LifecycleState: {} | Instance Status: {} | Instance Cpu: {}'.format(
+        print('Instance Id: {0} | Instance Zone: {1} | Instance LifecycleState: {2} | Instance Status: {3} | Instance Cpu: {4}'.format(
               colored(instance['InstanceId'], 'yellow'), colored(instance['AvailabilityZone'], 'yellow'), ins_life, ins_health, ins_cpu))
 
     if unhealthy == 0:
@@ -112,12 +112,12 @@ def asg_display(ASG):
     else:
         unhealthycolor = 'red'
     print('x'*150)
-    print('ASG Healthy Instance Count: {}'.format(colored(healthy, 'green')))
-    print('ASG Unhealthy Instance Count: {}'.format(colored(unhealthy, unhealthycolor)))
+    print('ASG Healthy Instance Count: {0}'.format(colored(healthy, 'green')))
+    print('ASG Unhealthy Instance Count: {0}'.format(colored(unhealthy, unhealthycolor)))
 
     for ELB in (ASG['LoadBalancerNames']):
         print('~'*150)
-        print('ELB Name: {}'.format(colored(ELB, 'blue')))
+        print('ELB Name: {0}'.format(colored(ELB, 'blue')))
         print('~'*150)
         get_metrics_elb(ELB)
         print('~'*150)
